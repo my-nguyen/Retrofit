@@ -26,7 +26,8 @@ class MainActivity : AppCompatActivity() {
         service = retrofit.create(JsonPlaceholderService::class.java)
 
         // getPosts2()
-        getComments()
+        // getComments()
+        putPost()
     }
 
     private fun getPosts1() = service.getPosts(4, "id", "desc")
@@ -86,6 +87,39 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<List<Comment>>, t: Throwable) {
+                binding.tvResult.text = t.message
+            }
+        })
+    }
+
+    private fun putPost1(): Call<Post> {
+        val post = Post(23, null, "New Title", "New Text")
+        return service.putPost(post)
+    }
+    private fun putPost2() = service.putPost(24, "Second Title", "Second Text")
+    private fun putPost3(): Call<Post> {
+        val fields = mutableMapOf<String, String>()
+        fields["userId"] = "25"
+        fields["title"] = "Third Title"
+        return service.putPost(fields)
+    }
+    private fun putPost() {
+        // val call = putPost1()
+        // val call = putPost2()
+        val call = putPost3()
+        call.enqueue(object: Callback<Post> {
+            override fun onResponse(call: Call<Post>, response: Response<Post>) {
+                if (!response.isSuccessful) {
+                    binding.tvResult.text = "Code: ${response.code()}"
+                } else {
+                    val pst = response.body()!!
+                    var content = "Code: ${response.code()}\n"
+                    content += "ID: ${pst.id}\nUser ID: ${pst.userId}\nTitle: ${pst.title}\nText: ${pst.body}\n\n"
+                    binding.tvResult.append(content)
+                }
+            }
+
+            override fun onFailure(call: Call<Post>, t: Throwable) {
                 binding.tvResult.text = t.message
             }
         })

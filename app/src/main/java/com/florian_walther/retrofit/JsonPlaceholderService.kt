@@ -24,4 +24,16 @@ interface JsonPlaceholderService {
 
     @GET
     fun getComments(@Url url: String): Call<List<Comment>>
+
+    @POST("posts")
+    fun putPost(@Body post: Post): Call<Post>
+
+    @FormUrlEncoded
+    @POST("posts")
+    fun putPost(@Field("userId") userId: Int, @Field("title") title: String,
+                @Field("body") text: String): Call<Post>
+
+    @FormUrlEncoded
+    @POST("posts")
+    fun putPost(@FieldMap fields: Map<String, String>): Call<Post>
 }
