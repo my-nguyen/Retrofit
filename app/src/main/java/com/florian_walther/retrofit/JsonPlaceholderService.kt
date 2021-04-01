@@ -41,9 +41,18 @@ interface JsonPlaceholderService {
     @PUT("posts/{id}")
     fun putPost(@Path("id") id: Int, @Body post: Post): Call<Post>
 
+    @Headers("Static-Header1: 123", "Static-Header2: 456")
+    @PUT("posts/{id}")
+    fun putPost(@Header("Dynamic-Header") header: String,
+                @Path("id") id: Int, @Body post: Post): Call<Post>
+
     // update existing Post by changing the fields of the Post
     @PATCH("posts/{id}")
     fun patchPost(@Path("id") id: Int, @Body post: Post): Call<Post>
+
+    @PATCH("posts/{id}")
+    fun patchPost(@HeaderMap headers: Map<String, String>,
+                  @Path("id") id: Int, @Body post: Post): Call<Post>
 
     @DELETE("posts/{id}")
     fun deletePost(@Path("id") id: Int): Call<Unit>

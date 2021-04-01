@@ -5,6 +5,7 @@ import android.os.Bundle
 import com.florian_walther.retrofit.databinding.ActivityMainBinding
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Callback
@@ -30,6 +31,16 @@ class MainActivity : AppCompatActivity() {
         val interceptor = HttpLoggingInterceptor()
         interceptor.level = HttpLoggingInterceptor.Level.BODY
         val client = OkHttpClient.Builder()
+                .addInterceptor {
+                    val originalRequest: Request = it.request()
+                    // intercept the original request, add some custom header then send it out
+                    // now the new header becomes global, so we don't have to add a header to each
+                    // of the individual getPost, putPost and patchPost in JsonPlaceholderService
+                    val newRequest = originalRequest.newBuilder()
+                            .header("Interceptor-Header", "xyz")
+                            .build()
+                    return@addInterceptor it.proceed(newRequest)
+                }
                 .addInterceptor(interceptor)
                 .build()
 
@@ -142,15 +153,30 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
-    
+
+    private fun updatePost1(post: Post) = service.putPost(5, post)
+    private fun updatePost2(post: Post) = service.patchPost(5, post)
+    private fun updatePost3(post: Post) = service.putPost("abc", 5, post)
+    private fun updatePost4(post: Post): Call<Post> {
+        val headers = HashMap<String, String>()
+        headers["Map-Header1"] = "def"
+        headers["Map-Header2"] = "ghi"
+        return service.patchPost(headers, 5, post)
+    }
     private fun updatePost() {
         val post = Post(12, null, null, "New Text")
         // this will return Post with Code=200, id=5, userId=12, title=null, text="New Text"
-        val call = service.putPost(5, post)
+        // val call = updatePost1(post)
+
         // call patchPost() with the exact same params as putPost() above
         // this will return Post with Code=200, id=5, userId=12, title="nesciunt quas odio", text="New Text"
         // that's because it's the default title when the field in the patch request is null
-        // val call = service.patchPost(5, post)
+        // val call = updatePost2(post)
+
+        // call with header
+        // val call = updatePost3(post)
+
+        val call = updatePost4(post)
         call.enqueue(object: Callback<Post> {
             override fun onResponse(call: Call<Post>, response: Response<Post>) {
                 if (!response.isSuccessful) {
