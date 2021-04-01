@@ -26,14 +26,25 @@ interface JsonPlaceholderService {
     fun getComments(@Url url: String): Call<List<Comment>>
 
     @POST("posts")
-    fun putPost(@Body post: Post): Call<Post>
+    fun postPost(@Body post: Post): Call<Post>
 
     @FormUrlEncoded
     @POST("posts")
-    fun putPost(@Field("userId") userId: Int, @Field("title") title: String,
-                @Field("body") text: String): Call<Post>
+    fun postPost(@Field("userId") userId: Int, @Field("title") title: String,
+                 @Field("body") text: String): Call<Post>
 
     @FormUrlEncoded
     @POST("posts")
-    fun putPost(@FieldMap fields: Map<String, String>): Call<Post>
+    fun postPost(@FieldMap fields: Map<String, String>): Call<Post>
+
+    // update existing Post by replacing it with a new Post
+    @PUT("posts/{id}")
+    fun putPost(@Path("id") id: Int, @Body post: Post): Call<Post>
+
+    // update existing Post by changing the fields of the Post
+    @PATCH("posts/{id}")
+    fun patchPost(@Path("id") id: Int, @Body post: Post): Call<Post>
+
+    @DELETE("posts/{id}")
+    fun deletePost(@Path("id") id: Int): Call<Unit>
 }

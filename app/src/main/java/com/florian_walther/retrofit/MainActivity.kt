@@ -3,6 +3,7 @@ package com.florian_walther.retrofit
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.florian_walther.retrofit.databinding.ActivityMainBinding
+import com.google.gson.GsonBuilder
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -18,6 +19,11 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // use this in a patch request GSON to serialize nulls in order to tell the server to delete
+        // a value instead of ignoring the null fields
+        // this would be passed in as a param to  GsonConverterFactory.create() below
+        val gson = GsonBuilder().serializeNulls().create()
+
         val retrofit = Retrofit.Builder()
                 .baseUrl("https://jsonplaceholder.typicode.com/")
                 .addConverterFactory(GsonConverterFactory.create())
@@ -27,7 +33,9 @@ class MainActivity : AppCompatActivity() {
 
         // getPosts2()
         // getComments()
-        putPost()
+        // postPost()
+        // updatePost()
+        deletePost()
     }
 
     private fun getPosts1() = service.getPosts(4, "id", "desc")
@@ -92,21 +100,21 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun putPost1(): Call<Post> {
+    private fun postPost1(): Call<Post> {
         val post = Post(23, null, "New Title", "New Text")
-        return service.putPost(post)
+        return service.postPost(post)
     }
-    private fun putPost2() = service.putPost(24, "Second Title", "Second Text")
-    private fun putPost3(): Call<Post> {
+    private fun postPost2() = service.postPost(24, "Second Title", "Second Text")
+    private fun postPost3(): Call<Post> {
         val fields = mutableMapOf<String, String>()
         fields["userId"] = "25"
         fields["title"] = "Third Title"
-        return service.putPost(fields)
+        return service.postPost(fields)
     }
-    private fun putPost() {
-        // val call = putPost1()
-        // val call = putPost2()
-        val call = putPost3()
+    private fun postPost() {
+        // val call = postPost1()
+        // val call = postPost2()
+        val call = postPost3()
         call.enqueue(object: Callback<Post> {
             override fun onResponse(call: Call<Post>, response: Response<Post>) {
                 if (!response.isSuccessful) {
@@ -120,6 +128,45 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<Post>, t: Throwable) {
+                binding.tvResult.text = t.message
+            }
+        })
+    }
+    
+    private fun updatePost() {
+        val post = Post(12, null, null, "New Text")
+        // this will return Post with Code=200, id=5, userId=12, title=null, text="New Text"
+        // val call = service.putPost(5, post)
+        // call patchPost() with the exact same params as putPost() above
+        // this will return Post with Code=200, id=5, userId=12, title="nesciunt quas odio", text="New Text"
+        // that's because it's the default title when the field in the patch request is null
+        val call = service.patchPost(5, post)
+        call.enqueue(object: Callback<Post> {
+            override fun onResponse(call: Call<Post>, response: Response<Post>) {
+                if (!response.isSuccessful) {
+                    binding.tvResult.text = "Code: ${response.code()}"
+                } else {
+                    val pst = response.body()!!
+                    var content = "Code: ${response.code()}\n"
+                    content += "ID: ${pst.id}\nUser ID: ${pst.userId}\nTitle: ${pst.title}\nText: ${pst.body}\n\n"
+                    binding.tvResult.append(content)
+                }
+            }
+
+            override fun onFailure(call: Call<Post>, t: Throwable) {
+                binding.tvResult.text = t.message
+            }
+        })
+    }
+
+    private fun deletePost() {
+        val call = service.deletePost(5)
+        call.enqueue(object: Callback<Unit> {
+            override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+                binding.tvResult.text = "Code: ${response.code()}"
+            }
+
+            override fun onFailure(call: Call<Unit>, t: Throwable) {
                 binding.tvResult.text = t.message
             }
         })
