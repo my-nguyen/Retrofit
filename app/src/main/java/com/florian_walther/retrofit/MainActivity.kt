@@ -4,6 +4,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.florian_walther.retrofit.databinding.ActivityMainBinding
 import com.google.gson.GsonBuilder
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -19,14 +21,22 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // use this in a patch request GSON to serialize nulls in order to tell the server to delete
-        // a value instead of ignoring the null fields
+        // use this in a PATCH request for GSON to serialize nulls in order to tell the server to
+        // delete a value instead of ignoring the null fields
         // this would be passed in as a param to  GsonConverterFactory.create() below
         val gson = GsonBuilder().serializeNulls().create()
+
+        // add logging by using the underlying library OKHttpClient
+        val interceptor = HttpLoggingInterceptor()
+        interceptor.level = HttpLoggingInterceptor.Level.BODY
+        val client = OkHttpClient.Builder()
+                .addInterceptor(interceptor)
+                .build()
 
         val retrofit = Retrofit.Builder()
                 .baseUrl("https://jsonplaceholder.typicode.com/")
                 .addConverterFactory(GsonConverterFactory.create())
+                .client(client)
                 .build()
 
         service = retrofit.create(JsonPlaceholderService::class.java)
@@ -34,8 +44,8 @@ class MainActivity : AppCompatActivity() {
         // getPosts2()
         // getComments()
         // postPost()
-        // updatePost()
-        deletePost()
+        updatePost()
+        // deletePost()
     }
 
     private fun getPosts1() = service.getPosts(4, "id", "desc")
@@ -136,11 +146,11 @@ class MainActivity : AppCompatActivity() {
     private fun updatePost() {
         val post = Post(12, null, null, "New Text")
         // this will return Post with Code=200, id=5, userId=12, title=null, text="New Text"
-        // val call = service.putPost(5, post)
+        val call = service.putPost(5, post)
         // call patchPost() with the exact same params as putPost() above
         // this will return Post with Code=200, id=5, userId=12, title="nesciunt quas odio", text="New Text"
         // that's because it's the default title when the field in the patch request is null
-        val call = service.patchPost(5, post)
+        // val call = service.patchPost(5, post)
         call.enqueue(object: Callback<Post> {
             override fun onResponse(call: Call<Post>, response: Response<Post>) {
                 if (!response.isSuccessful) {
